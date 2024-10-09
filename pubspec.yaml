@@ -1,0 +1,24 @@
+name: cinetpay
+
+description: Invoquez le guichet de paiement de CinetPay, effectuez un paiement et attendez le statut du paiement initié à la seconde près après la fin du paiement.
+
+version: 1.0.9
+
+homepage: https://cinetpay.com
+
+environment:
+  sdk: ">=2.12.0 <4.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_inappwebview: ^6.1.5
+  url_launcher: ^6.3.1
+  panara_dialogs: ^0.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
