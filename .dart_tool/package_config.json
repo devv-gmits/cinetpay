@@ -44,54 +44,6 @@
       "languageVersion": "3.3"
     },
     {
-      "name": "flutter_inappwebview",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview-6.1.5",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "flutter_inappwebview_android",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_android-1.1.3",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "flutter_inappwebview_internal_annotations",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_internal_annotations-1.1.1",
-      "packageUri": "lib/",
-      "languageVersion": "2.15"
-    },
-    {
-      "name": "flutter_inappwebview_ios",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_ios-1.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "flutter_inappwebview_macos",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_macos-1.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "flutter_inappwebview_platform_interface",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_platform_interface-1.3.0+1",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "flutter_inappwebview_web",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_web-1.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "flutter_inappwebview_windows",
-      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_inappwebview_windows-0.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
       "name": "flutter_test",
       "rootUri": "file:///C:/flutter_sdks/flutter_3.24.1/packages/flutter_test",
       "packageUri": "lib/",
@@ -266,13 +218,37 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "webview_flutter",
+      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter-4.10.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "webview_flutter_android",
+      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_android-4.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_platform_interface-2.10.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "rootUri": "file:///C:/Users/vyasd/AppData/Local/Pub/Cache/hosted/pub.dev/webview_flutter_wkwebview-3.16.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "cinetpay",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-10-17T04:40:09.507516Z",
+  "generated": "2024-10-17T05:32:23.562739Z",
   "generator": "pub",
   "generatorVersion": "3.5.1",
   "flutterRoot": "file:///C:/flutter_sdks/flutter_3.24.1",

@@ -1,9 +1,8 @@
 library cinetpay;
 
-import 'dart:io';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:panara_dialogs/panara_dialogs.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,27 +31,91 @@ class CinetPayCheckout extends StatefulWidget {
 }
 
 class CinetPayCheckoutState extends State<CinetPayCheckout> {
-  final GlobalKey webViewKey = GlobalKey();
+  late WebViewController _controller;
   final Uri wave = Uri.parse("https://play.google.com/store/apps/details?id=com.wave.personal");
-
-  InAppWebViewController? webViewController;
-  InAppWebViewSettings options = InAppWebViewSettings(
-    useShouldOverrideUrlLoading: true,
-    useHybridComposition: true,
-  );
 
   @override
   void initState() {
     super.initState();
-    WidgetsFlutterBinding.ensureInitialized();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            // Update loading bar.
+          },
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
+          onWebResourceError: (WebResourceError error) {
+            print('WebView error: ${error.description}');
+          },
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith('https://www.youtube.com/')) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..addJavaScriptChannel(
+        'Flutter',
+        onMessageReceived: (JavaScriptMessage message) {
+          handleJavaScriptMessage(message.message);
+        },
+      )
+      ..loadHtmlString(_generateHtml());
+  }
 
-    if (Platform.isAndroid) {
-      InAppWebViewController.setWebContentsDebuggingEnabled(true);
+  String _generateHtml() {
+    return '''
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://cdn.cinetpay.com/seamless/latest/main.js"></script>
+        <script>
+          function checkout() {
+            var configData = ${jsonEncode(widget.configData)};
+            var paymentData = ${jsonEncode(widget.paymentData)};
+            
+            console.log("Config Data:", JSON.stringify(configData));
+            console.log("Payment Data:", JSON.stringify(paymentData));
+            
+            CinetPay.setConfig(configData);
+            CinetPay.getCheckout(paymentData);
+            
+            CinetPay.waitResponse(function(data) {
+              console.log("CinetPay Response:", JSON.stringify(data));
+              Flutter.postMessage(JSON.stringify({type: 'finished', data: data}));
+            });
+            
+            CinetPay.onError(function(data) {
+              console.error("CinetPay Error:", JSON.stringify(data));
+              Flutter.postMessage(JSON.stringify({type: 'error', data: data}));
+            });
+          }
+
+          window.onload = checkout;
+        </script>
+      </head>
+      <body>
+        <div id="cinet-pay-checkout"></div>
+      </body>
+      </html>
+    ''';
+  }
+
+  void handleJavaScriptMessage(String message) {
+    final data = jsonDecode(message);
+    if (data['type'] == 'finished') {
+      widget.waitResponse!(data['data']);
+    } else if (data['type'] == 'error') {
+      widget.onError!(data['data']);
     }
   }
 
-  Future<void> playStore(InAppWebViewController controller) async {
-    await controller.goBack();
+  Future<void> playStore() async {
     await PanaraInfoDialog.show(
       context,
       title: "WAVE",
@@ -75,111 +138,7 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
         centerTitle: true,
         backgroundColor: widget.titleBackgroundColor,
       ),
-      body: SafeArea(
-        child: InAppWebView(
-          key: webViewKey,
-          initialUrlRequest: URLRequest(
-            url: WebUri.uri(Uri.parse('about:blank')),
-            headers: {},
-          ),
-          initialSettings: options,
-          onWebViewCreated: (InAppWebViewController controller) {
-            webViewController = controller;
-            controller.loadData(data: """
-              <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
-                    <script>
-                        function checkout() {
-                            window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
-                                window.flutter_inappwebview.callHandler('elementToSend')
-                                    .then(function(result) {
-                                    var configData = result.configData;
-                                    var paymentData = result.paymentData;
-                                    
-                                    CinetPay.setConfig(configData);
-                                    CinetPay.getCheckout(paymentData);
-                                    
-                                    CinetPay.waitResponse(function(data) {
-                                        wait('finished', data);
-                                    });
-                                    
-                                    CinetPay.onError(function(data) {
-                                        error('error', data);
-                                    });
-                                });
-                            });
-                        }
-                        
-                        function wait(title, data) {
-                            window.flutter_inappwebview.callHandler(title, data).then(function(result) {});
-                        }
-                        
-                        function error(title, data) {
-                            window.flutter_inappwebview.callHandler(title, data).then(function(result) {});
-                        }
-                    </script>
-                </head>
-                <body onload="checkout()">
-                </body>
-                </html>
-            """);
-
-            controller.addJavaScriptHandler(
-              handlerName: 'elementToSend',
-              callback: (args) {
-                Map<String, dynamic> _configData = {...widget.configData!, 'type': "MOBILE"};
-                final Map<String, dynamic> data = {'configData': _configData, 'paymentData': widget.paymentData};
-                print("Send payment data to get CinetPay Checkout");
-                return data;
-              },
-            );
-
-            controller.addJavaScriptHandler(
-              handlerName: 'finished',
-              callback: (args) async {
-                print("CinetPay Checkout send payment response");
-                return widget.waitResponse!(args[0]);
-              },
-            );
-
-            controller.addJavaScriptHandler(
-              handlerName: 'error',
-              callback: (args) async {
-                print("An error occurred : ${args[0]}");
-                return widget.onError!(args[0]);
-              },
-            );
-          },
-          onPermissionRequest: (controller, request) async {
-            return PermissionResponse(resources: request.resources, action: PermissionResponseAction.GRANT);
-          },
-          onReceivedError: (controller, request, error) {
-            print("An error occurred : ${error.description}");
-          },
-          onConsoleMessage: (controller, consoleMessage) async {
-            String response = consoleMessage.message;
-            print("console : $response");
-            if (response.contains('https://play.google.com/')) {
-              await playStore(controller);
-            }
-          },
-          shouldOverrideUrlLoading: (controller, navigationAction) async {
-            Uri url = navigationAction.request.url!;
-            try {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-              await controller.goBack();
-              print("Redirect to : $url");
-            } catch (exception) {
-              print("Exception to redirect : $exception");
-              await playStore(controller);
-            }
-            return NavigationActionPolicy.ALLOW;
-          },
-        ),
-      ),
+      body: WebViewWidget(controller: _controller),
     );
   }
 }
