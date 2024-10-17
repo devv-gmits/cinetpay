@@ -37,9 +37,10 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
 
   InAppWebViewController? webViewController;
   InAppWebViewSettings options = InAppWebViewSettings(
-    useShouldOverrideUrlLoading: true,
-    useHybridComposition: true,
-  );
+  useShouldOverrideUrlLoading: true,
+  useHybridComposition: true,
+  userAgent: 'Your Custom User Agent String',
+);
 
   @override
   void initState() {
@@ -128,14 +129,16 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
             """);
 
             controller.addJavaScriptHandler(
-              handlerName: 'elementToSend',
-              callback: (args) {
-                Map<String, dynamic> _configData = {...widget.configData!, 'type': "MOBILE"};
-                final Map<String, dynamic> data = {'configData': _configData, 'paymentData': widget.paymentData};
-                print("Send payment data to get CinetPay Checkout");
-                return data;
-              },
-            );
+  handlerName: 'elementToSend',
+  callback: (args) {
+    Map<String, dynamic> _configData = {...widget.configData!, 'type': "MOBILE"};
+    final Map<String, dynamic> data = {'configData': _configData, 'paymentData': widget.paymentData};
+    print("Detailed CinetPay request data:");
+    print("Config Data: $_configData");
+    print("Payment Data: ${widget.paymentData}");
+    return data;
+  },
+);
 
             controller.addJavaScriptHandler(
               handlerName: 'finished',
