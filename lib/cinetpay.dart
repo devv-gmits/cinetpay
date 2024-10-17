@@ -93,34 +93,46 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
                     <meta name="viewport" content="width=device-width, initial-scale=1">
                     <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
                     <script>
-                        function checkout() {
-                            window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
-                                window.flutter_inappwebview.callHandler('elementToSend')
-                                    .then(function(result) {
-                                    var configData = result.configData;
-                                    var paymentData = result.paymentData;
-                                    
-                                    CinetPay.setConfig(configData);
-                                    CinetPay.getCheckout(paymentData);
-                                    
-                                    CinetPay.waitResponse(function(data) {
-                                        wait('finished', data);
-                                    });
-                                    
-                                    CinetPay.onError(function(data) {
-                                        error('error', data);
-                                    });
-                                });
-                            });
-                        }
-                        
-                        function wait(title, data) {
-                            window.flutter_inappwebview.callHandler(title, data).then(function(result) {});
-                        }
-                        
-                        function error(title, data) {
-                            window.flutter_inappwebview.callHandler(title, data).then(function(result) {});
-                        }
+                        window.onerror = function(message, source, lineno, colno, error) {
+    console.error("JavaScript Error:", message, "at", source, ":", lineno);
+    if (error && error.stack) {
+      console.error("Stack trace:", error.stack);
+    }
+    return true;
+  };
+
+  // Wrap CinetPay calls in try-catch
+  function checkout() {
+    window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
+      window.flutter_inappwebview.callHandler('elementToSend')
+        .then(function(result) {
+          try {
+            var configData = result.configData;
+            var paymentData = result.paymentData;
+            
+            console.log("Config Data:", JSON.stringify(configData));
+            console.log("Payment Data:", JSON.stringify(paymentData));
+            
+            CinetPay.setConfig(configData);
+            CinetPay.getCheckout(paymentData);
+            
+            CinetPay.waitResponse(function(data) {
+              console.log("CinetPay Response:", JSON.stringify(data));
+              wait('finished', data);
+            });
+            
+            CinetPay.onError(function(data) {
+              console.error("CinetPay Error:", JSON.stringify(data));
+              error('error', data);
+            });
+          } catch (e) {
+            console.error("Error in CinetPay setup:", e);
+            error('error', { message: "Error in CinetPay setup", description: e.toString() });
+          }
+        });
+    });
+  }
+
                     </script>
                 </head>
                 <body onload="checkout()">
@@ -129,14 +141,18 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
             """);
 
             controller.addJavaScriptHandler(
-  handlerName: 'elementToSend',
-  callback: (args) {
-    Map<String, dynamic> _configData = {...widget.configData!, 'type': "MOBILE"};
-    final Map<String, dynamic> data = {'configData': _configData, 'paymentData': widget.paymentData};
-    print("Detailed CinetPay request data:");
-    print("Config Data: $_configData");
-    print("Payment Data: ${widget.paymentData}");
-    return data;
+  handlerName: 'error',
+  callback: (args) async {
+    print("Detailed CinetPay error:");
+    print(args[0]);
+    if (args[0] is Map<String, dynamic>) {
+      final errorData = args[0] as Map<String, dynamic>;
+      print("Error Code: ${errorData['code']}");
+      print("Error Message: ${errorData['message']}");
+      print("Error Description: ${errorData['description']}");
+      // Add any additional fields that might be present in the error response
+    }
+    return widget.onError!(args[0]);
   },
 );
 
