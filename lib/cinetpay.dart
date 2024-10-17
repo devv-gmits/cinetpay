@@ -75,84 +75,73 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
   String _generateHtml() {
     return '''
     <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #debug { background-color: #f0f0f0; padding: 10px; margin-top: 20px; }
-      </style>
-      <script>
-        function loadScript(url, callback) {
-          var script = document.createElement("script");
-          script.type = "text/javascript";
-          script.onload = function() {
-            document.getElementById('debug').innerHTML += '<p>CinetPay SDK loaded successfully</p>';
-            callback();
-          };
-          script.onerror = function() {
-            console.error("Failed to load CinetPay SDK");
-            document.getElementById('debug').innerHTML += '<p>Failed to load CinetPay SDK</p>';
-            Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "Failed to load CinetPay SDK"}}));
-          };
-          script.src = url;
-          document.getElementsByTagName("head")[0].appendChild(script);
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.cinetpay.com/seamless/main.js"></script>
+    <style>
+        .sdk {
+            display: block;
+            position: absolute;
+            background-position: center;
+            text-align: center;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
         }
-
-        function initializeCinetPay() {
-          document.getElementById('debug').innerHTML += '<p>Initializing CinetPay...</p>';
-          loadScript("https://cdn.cinetpay.com/seamless/latest/main.js", function() {
-            if (typeof CinetPay === 'undefined') {
-              console.error("CinetPay is still undefined after loading the script");
-              document.getElementById('debug').innerHTML += '<p>CinetPay is undefined after loading</p>';
-              Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "CinetPay is undefined after loading"}}));
-              return;
-            }
-            document.getElementById('debug').innerHTML += '<p>CinetPay initialized, starting checkout...</p>';
-            checkout();
-          });
-        }
-
+    </style>
+    <script>
         function checkout() {
-          var configData = ${jsonEncode(widget.configData)};
-          var paymentData = ${jsonEncode(widget.paymentData)};
-          
-          document.getElementById('debug').innerHTML += '<p>Config Data: ' + JSON.stringify(configData) + '</p>';
-          document.getElementById('debug').innerHTML += '<p>Payment Data: ' + JSON.stringify(paymentData) + '</p>';
-          
-          try {
-            CinetPay.setConfig(configData);
-            CinetPay.getCheckout(paymentData);
-            
-            CinetPay.waitResponse(function(data) {
-              document.getElementById('debug').innerHTML += '<p>CinetPay Response: ' + JSON.stringify(data) + '</p>';
-              Flutter.postMessage(JSON.stringify({type: 'finished', data: data}));
+            CinetPay.setConfig({
+                apikey: '48869821566f0cf543b4424.94733492',//   YOUR APIKEY
+                site_id: '5880383',//YOUR_SITE_ID
+                notify_url: 'http://mondomaine.com/notify/',
+                mode: 'PRODUCTION'
             });
-            
-            CinetPay.onError(function(data) {
-              document.getElementById('debug').innerHTML += '<p>CinetPay Error: ' + JSON.stringify(data) + '</p>';
-              Flutter.postMessage(JSON.stringify({type: 'error', data: data}));
-            });
-          } catch (error) {
-            document.getElementById('debug').innerHTML += '<p>Error in CinetPay setup: ' + error.toString() + '</p>';
-            Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "Error in CinetPay setup", description: error.toString()}}));
-          }
-        }
+            CinetPay.getCheckout({
+                transaction_id: Math.floor(Math.random() * 100000000).toString(), // YOUR TRANSACTION ID
+                amount: 100,
+                currency: 'XOF',
+                channels: 'ALL',
+                description: 'Test de paiement',   
+                 //Fournir ces variables pour le paiements par carte bancaire
+                customer_name:"Joe",//Le nom du client
+                customer_surname:"Down",//Le prenom du client
+                customer_email: "down@test.com",//l'email du client
+                customer_phone_number: "088767611",//l'email du client
+                customer_address : "BP 0024",//addresse du client
+                customer_city: "Antananarivo",// La ville du client
+                customer_country : "CM",// le code ISO du pays
+                customer_state : "CM",// le code ISO l'état
+                customer_zip_code : "06510", // code postal
 
-        window.onerror = function(message, source, lineno, colno, error) {
-          console.error("JavaScript Error:", message, "at", source, ":", lineno);
-          document.getElementById('debug').innerHTML += '<p>JavaScript Error: ' + message + ' at ' + source + ':' + lineno + '</p>';
-          Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "JavaScript Error", description: message}}));
-          return true;
-        };
-      </script>
+            });
+            CinetPay.waitResponse(function(data) {
+                if (data.status == "REFUSED") {
+                    if (alert("Votre paiement a échoué")) {
+                        window.location.reload();
+                    }
+                } else if (data.status == "ACCEPTED") {
+                    if (alert("Votre paiement a été effectué avec succès")) {
+                        window.location.reload();
+                    }
+                }
+            });
+            CinetPay.onError(function(data) {
+                console.log(data);
+            });
+        }
+    </script>
+</head>
+<body>
     </head>
-    <body onload="initializeCinetPay()">
-      <h1>CinetPay Checkout</h1>
-      <div id="cinet-pay-checkout"></div>
-      <div id="debug"><h2>Debug Information:</h2></div>
+    <body>
+        <div class="sdk">
+            <h1>SDK SEAMLESS</h1>
+            <button onclick="checkout()">Checkout</button>
+        </div>
     </body>
-    </html>
+</html>  
   ''';
   }
 
