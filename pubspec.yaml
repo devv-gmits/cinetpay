@@ -2,7 +2,7 @@ name: cinetpay
 
 description: Invoquez le guichet de paiement de CinetPay, effectuez un paiement et attendez le statut du paiement initié à la seconde près après la fin du paiement.
 
-version: 1.0.9
+version: 1.0.0
 
 homepage: https://cinetpay.com
 
