@@ -46,12 +46,15 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
             // Update loading bar.
           },
           onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
+          onPageFinished: (String url) {
+            _controller.runJavaScript('initializeCinetPay()');
+          },
           onWebResourceError: (WebResourceError error) {
             print('WebView error: ${error.description}');
           },
           onNavigationRequest: (NavigationRequest request) {
-            if (request.url.startsWith('https://www.youtube.com/')) {
+            if (request.url.startsWith('https://play.google.com/')) {
+              playStore();
               return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
@@ -67,14 +70,39 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
       ..loadHtmlString(_generateHtml());
   }
 
+
   String _generateHtml() {
     return '''
       <!DOCTYPE html>
       <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://cdn.cinetpay.com/seamless/latest/main.js"></script>
         <script>
+          function loadScript(url, callback) {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.onload = function() {
+              callback();
+            };
+            script.onerror = function() {
+              console.error("Failed to load CinetPay SDK");
+              Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "Failed to load CinetPay SDK"}}));
+            };
+            script.src = url;
+            document.getElementsByTagName("head")[0].appendChild(script);
+          }
+
+          function initializeCinetPay() {
+            loadScript("https://cdn.cinetpay.com/seamless/latest/main.js", function() {
+              if (typeof CinetPay === 'undefined') {
+                console.error("CinetPay is still undefined after loading the script");
+                Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "CinetPay is undefined after loading"}}));
+                return;
+              }
+              checkout();
+            });
+          }
+
           function checkout() {
             var configData = ${jsonEncode(widget.configData)};
             var paymentData = ${jsonEncode(widget.paymentData)};
@@ -82,21 +110,30 @@ class CinetPayCheckoutState extends State<CinetPayCheckout> {
             console.log("Config Data:", JSON.stringify(configData));
             console.log("Payment Data:", JSON.stringify(paymentData));
             
-            CinetPay.setConfig(configData);
-            CinetPay.getCheckout(paymentData);
-            
-            CinetPay.waitResponse(function(data) {
-              console.log("CinetPay Response:", JSON.stringify(data));
-              Flutter.postMessage(JSON.stringify({type: 'finished', data: data}));
-            });
-            
-            CinetPay.onError(function(data) {
-              console.error("CinetPay Error:", JSON.stringify(data));
-              Flutter.postMessage(JSON.stringify({type: 'error', data: data}));
-            });
+            try {
+              CinetPay.setConfig(configData);
+              CinetPay.getCheckout(paymentData);
+              
+              CinetPay.waitResponse(function(data) {
+                console.log("CinetPay Response:", JSON.stringify(data));
+                Flutter.postMessage(JSON.stringify({type: 'finished', data: data}));
+              });
+              
+              CinetPay.onError(function(data) {
+                console.error("CinetPay Error:", JSON.stringify(data));
+                Flutter.postMessage(JSON.stringify({type: 'error', data: data}));
+              });
+            } catch (error) {
+              console.error("Error in CinetPay setup:", error);
+              Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "Error in CinetPay setup", description: error.toString()}}));
+            }
           }
 
-          window.onload = checkout;
+          window.onerror = function(message, source, lineno, colno, error) {
+            console.error("JavaScript Error:", message, "at", source, ":", lineno);
+            Flutter.postMessage(JSON.stringify({type: 'error', data: {message: "JavaScript Error", description: message}}));
+            return true;
+          };
         </script>
       </head>
       <body>
